@@ -3,7 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const port = process.env.PORT || 5000;
 require("dotenv").config();
-const jwt = require("jsonwebtoken"); //TODO: require('crypto').randomBytes(64).toString('hex')
+// const jwt = require("jsonwebtoken"); //TODO: require('crypto').randomBytes(64).toString('hex')
 
 const app = express();
 
@@ -11,20 +11,20 @@ const app = express();
 app.use(cors());
 app.use(express.json()); //! Admin: vinayo8123@glumark.com , warner@david.com / Chandpurasi1!
 
-function verifyJWT(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    return res.status(401).send("unauthorized access");
-  }
-  const token = authHeader.split(" ")[1];
-  jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
-    if (err) {
-      return res.status(403).send("forbidden access");
-    }
-    req.decoded = decoded;
-    next();
-  });
-}
+// function verifyJWT(req, res, next) {
+//   const authHeader = req.headers.authorization;
+//   if (!authHeader) {
+//     return res.status(401).send("unauthorized access");
+//   }
+//   const token = authHeader.split(" ")[1];
+//   jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
+//     if (err) {
+//       return res.status(403).send("forbidden access");
+//     }
+//     req.decoded = decoded;
+//     next();
+//   });
+// }
 //?----> middlewares end
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.f7eznot.mongodb.net/?retryWrites=true&w=majority`;
@@ -55,7 +55,8 @@ async function run() {
 
     //?-----> verify admin jwt middleware starts
     const verifyAdmin = async (req, res, next) => {
-      const decodedEmail = req.decoded.email;
+      const decodedEmail = req.query.email;
+      console.log(decodedEmail);
       const query = { email: decodedEmail };
       const user = await userCollection.findOne(query);
       if (user?.role !== "admin") {
@@ -141,13 +142,13 @@ async function run() {
     });
 
     //TODO: get all the booking datas
-    app.get("/bookings", verifyJWT, async (req, res) => {
+    app.get("/bookings", async (req, res) => {
       try {
         const email = req.query.email;
-        const decodedEmail = req.decoded.email;
-        if (email !== decodedEmail) {
-          return res.status(403).send({ message: "forbidden access" });
-        }
+        // const decodedEmail = req.decoded.email;
+        // if (email !== decodedEmail) {
+        //   return res.status(403).send({ message: "forbidden access" });
+        // }
         const query = { email: email };
         const bookings = await bookingCollection.find(query).toArray();
         res.send(bookings);
@@ -156,7 +157,7 @@ async function run() {
       }
     });
 
-    app.get("/allBookings", verifyJWT, verifyAdmin, async (req, res) => {
+    app.get("/allBookings", verifyAdmin, async (req, res) => {
       try {
         const query = {};
         const result = await bookingCollection.find(query).toArray();
@@ -166,7 +167,7 @@ async function run() {
       }
     });
 
-    app.delete("/allBookings/:id", verifyJWT, verifyAdmin, async (req, res) => {
+    app.delete("/allBookings/:id", verifyAdmin, async (req, res) => {
       try {
         const id = req.params.id;
         const filter = { _id: new ObjectId(id) };
@@ -178,18 +179,18 @@ async function run() {
     });
 
     //TODO: Create me a JWT token
-    app.get("/jwt", async (req, res) => {
-      try {
-        const email = req.query.email;
-        const query = { email: email };
-        const user = await userCollection.findOne(query);
-        if (user) {
-          const token = jwt.sign({ email }, process.env.ACCESS_TOKEN);
-          return res.send({ accessToken: token });
-        }
-        res.status(403).send({ accessToken: "" });
-      } catch (error) {}
-    });
+    // app.get("/jwt", async (req, res) => {
+    //   try {
+    //     const email = req.query.email;
+    //     const query = { email: email };
+    //     const user = await userCollection.findOne(query);
+    //     if (user) {
+    //       const token = jwt.sign({ email }, process.env.ACCESS_TOKEN);
+    //       return res.send({ accessToken: token });
+    //     }
+    //     res.status(403).send({ accessToken: "" });
+    //   } catch (error) {}
+    // });
 
     //TODO: save user information on db
     app.post("/users", async (req, res) => {
@@ -203,7 +204,7 @@ async function run() {
     });
 
     //TODO: delete a user
-    app.delete("/users/:id", verifyJWT, verifyAdmin, async (req, res) => {
+    app.delete("/users/:id", verifyAdmin, async (req, res) => {
       try {
         const id = req.params.id;
         const filter = { _id: new ObjectId(id) };
@@ -226,7 +227,7 @@ async function run() {
     });
 
     //TODO: make admin role
-    app.put("/users/admin/:id", verifyJWT, verifyAdmin, async (req, res) => {
+    app.put("/users/admin/:id", verifyAdmin, async (req, res) => {
       try {
         const id = req.params.id;
         const filter = { _id: new ObjectId(id) };
@@ -260,7 +261,7 @@ async function run() {
     });
 
     //TODO: upload a doctor
-    app.post("/doctors", verifyJWT, verifyAdmin, async (req, res) => {
+    app.post("/doctors", verifyAdmin, async (req, res) => {
       try {
         const doctor = req.body;
         const result = await doctorsCollection.insertOne(doctor);
@@ -271,7 +272,7 @@ async function run() {
     });
 
     //TODO: get all uploaded doctors info
-    app.get("/doctors", verifyJWT, verifyAdmin, async (req, res) => {
+    app.get("/doctors", verifyAdmin, async (req, res) => {
       try {
         const query = {};
         const doctors = await doctorsCollection.find(query).toArray();
@@ -292,7 +293,7 @@ async function run() {
     });
 
     //TODO: delete a doctor permanently
-    app.delete("/doctors/:id", verifyJWT, verifyAdmin, async (req, res) => {
+    app.delete("/doctors/:id", verifyAdmin, async (req, res) => {
       try {
         const id = req.params.id;
         const filter = { _id: new ObjectId(id) };
