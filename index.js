@@ -28,7 +28,7 @@ app.use(express.json()); //! Admin: vinayo8123@glumark.com , warner@david.com / 
 //?----> middlewares end
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.f7eznot.mongodb.net/?retryWrites=true&w=majority`;
-console.log(uri);
+// console.log(uri);
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
@@ -52,6 +52,9 @@ async function run() {
     const doctorsCollection = client
       .db("doctorsPortal")
       .collection("doctorsCollection");
+    const contackCollection = client
+      .db("contackPortal")
+      .collection("contackCollection")
 
     //?-----> verify admin jwt middleware starts
     const verifyAdmin = async (req, res, next) => {
@@ -117,6 +120,7 @@ async function run() {
       }
     });
 
+
     //TODO: booking data save to db
     app.post("/bookings", async (req, res) => {
       try {
@@ -140,6 +144,9 @@ async function run() {
         res.send(error.message);
       }
     });
+
+
+
 
     //TODO: get all the booking datas
     app.get("/bookings", async (req, res) => {
@@ -202,6 +209,22 @@ async function run() {
         res.send(error?.message);
       }
     });
+
+
+    // for contack us page
+    app.post("/contack", async (req, res) => {
+      try {
+        const contack = req.body;
+        console.log(contack);
+        const result = await contackCollection.insertOne(contack);
+        res.send(result);
+      } catch (error) {
+        res.send(error?.message);
+      }
+    });
+
+
+
 
     //TODO: delete a user
     app.delete("/users/:id", verifyAdmin, async (req, res) => {
